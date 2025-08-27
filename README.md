@@ -1,61 +1,77 @@
-# 🚕 Taksi Ortamı ile Q-Öğrenme Eğitimi
+# 🚁 Optimize Edilmiş Tarım Drone'u Simülasyonu
 
-## 🗺️ Harita ve Engeller
-Harita, görselden (`taksi.png`) alınmıştır.  
+Bu proje, derin pekiştirmeli öğrenme (Deep Reinforcement Learning) kullanarak **tarım alanında hastalıklı bitki tespiti yapan bir drone ajanı** geliştirmeyi amaçlamaktadır. Proje, Google Colab ortamında çalışacak şekilde hazırlanmış ve Google Drive üzerinden görseller ve modellerle entegre edilmiştir.
 
-- **Kırmızı hücreler 🚫** ve **kahverengi tuğla duvarlar 🧱** geçilemez alanlar olarak belirlenmiştir.  
-- Bu engeller, eğitim ortamını hazırlamak için otomatik olarak tespit edilir.  
+---
 
-## 🧩 Ortamın Yapısı (CustomTaxiEnv)
-- **Izgara:** 10x10 hücre, her biri 50x50 piksel boyutunda  
-- **Özellikler:**  
-  - Taksi 🟡 özel bir ikonla temsil edilir  
-  - Yolcu 🧍 özel bir ikonla gösterilir  
-  - Hedef 🟩 yeşil bir kareyle belirtilir  
-  - Geçilemez alanlar 🔴 kırmızı veya kahverengi olarak görselleştirilir  
+## 🗺️ Tarım Alanı ve Ortam Yapısı
 
-- **Durum (state):**  
-(taksi_x, taksi_y, yolcu_x, yolcu_y, yolcu_taksidemi)
+- **Izgara Boyutu:** 6x6 hücre
+- **Hücre Tipleri:**
+  - `0`: Boş hücre
+  - `1`: Sağlıklı bitki
+  - `2`: Hastalıklı bitki
+- **Başlangıç Pozisyonu:** (0,0) Şarj istasyonu
+- **Hedef:** Tespit edilen tüm hastalıklı bitkiler toplandıktan sonra şarj istasyonuna dönmek
 
+### Görselleştirme
+- **Drone:** `drone.png`  
+- **Hastalıklı Bitki:** `kirmizi.png`  
+- **Boş Hücre:** `bos.png`  
+- **Şarj İstasyonu:** `sarj.png`  
+- **Tarla:** `tarla.png`  
+
+---
 
 ## 🎮 Aksiyonlar
-| Aksiyon Kodu | Açıklama           |
-|--------------|------------------|
-| 0            | Yukarı git       |
-| 1            | Aşağı git        |
-| 2            | Sola git         |
-| 3            | Sağa git         |
-| 4            | Yolcuyu al (pick up) |
-| 5            | Yolcuyu bırak (drop) |
 
-## 🏆 Ödül Sistemi
-| Olay                        | Ödül |
-|-----------------------------|------|
-| Yolcuyu doğru yerde alma     | +10  |
-| Yolcuyu doğru yerde bırakma | +20  |
-| Yanlış pick/drop            | -10  |
-| Her adım                    | -1   |
+| Kod | Aksiyon               |
+|-----|---------------------|
+| 0   | Yukarı git           |
+| 1   | Aşağı git            |
+| 2   | Sola git             |
+| 3   | Sağa git             |
+| 4   | Şarj istasyonunda şarj |
 
-## 👁️ Görselleştirme (Render)
-- Yolcu taksideyse:  
-- Taksinin etrafına kırmızı çember çizilir  
-- Yolcunun alındığı yere kırmızı "X" çizilir  
+---
 
-- Yolcu dışarıdaysa:  
-- Yolcu ikonu gösterilir  
+## 🏆 Ödül Sistemi (Optimize Edilmiş)
 
-- Hedef:  
-- Yeşil bir kutu olarak görünür  
+| Olay                                   | Ödül |
+|----------------------------------------|-------|
+| Hastalıklı bitkiyi tespit etme          | +100  |
+| Göreve tamamladıktan sonra eve dönüş    | +50   |
+| Boş hücreyi ziyaret etme                | +10   |
+| Sağlıklı bitkiyi ziyaret etme           | +5    |
+| Ziyaret edilen hücreyi tekrar ziyaret  | -2    |
+| Batarya bittiğinde                        | -50   |
+| Başarısız şarj denemesi                  | -10   |
+| Şarj olma                                 | +5    |
 
-- Taksi:  
-- Taksi ikonu her zaman görünür  
+---
 
-## 🤖 Q-learning Eğitimi
-- Toplam **500 epoch** boyunca eğitim yapılır  
-- Aksiyonlar rastgele keşfedilir veya Q-table’dan seçilir  
-- Her adımda Q-table aşağıdaki formül ile güncellenir:  
+## 🤖 Derin Öğrenme Modeli
 
-```python
-Q(s, a) ← (1 - α) * Q(s, a) + α * [r + γ * max Q(s', a')]
-```
-### Not: Bu çalışma Google Colab üzerinde yapılmış ve taksi adlı klasörde, Google Drive'da kaydedilmiştir.
+- **Model:** AdvancedDroneDQN (Gelişmiş Derin Q-Ağı)
+- **Girdi Boyutu:** Ortamın durum vektörü
+- **Çıktı Boyutu:** 5 (Aksiyon sayısı)
+- **Kayıp Fonksiyonu:** MSELoss
+- **Optimizasyon:** Adam, StepLR ile öğrenme oranı güncelleme
+- **Replay Buffer:** Deney tamponu ile öğrenme
+- **Epsilon-greedy:** Keşif ve sömürü politikası
+
+---
+
+## 🏭 Eğitim Süreci
+
+- **Bölüm Sayısı:** 1500
+- **Maksimum Adım Sayısı:** 200
+- **İstatistikler:** 
+  - Ortalama ödül
+  - Hastalıklı tespit oranı
+  - Eğitim kaybı
+- **Model Kaydı:** Google Drive'da `models/` klasörüne kaydedilir
+- **Grafikler:** Ödül, tespit oranı ve kayıp grafikleri kaydedilir ve görüntülenir
+
+---
+
